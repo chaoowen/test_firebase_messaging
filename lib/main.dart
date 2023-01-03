@@ -3,6 +3,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:test_local_notification/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('handling background message ${message.messageId}');
@@ -146,7 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-	// 這邊設定發送推播的內容
+	// local 發送訊息
   showNotification() async {
     var _android = AndroidNotificationDetails(
       'channel id', 
@@ -165,6 +167,50 @@ class _MyHomePageState extends State<MyHomePage> {
       payload: 'Nitish Kumar Singh is part time Youtuber');
   }
 
+  // firebase 發送訊息
+  sendPushMessage(String body, String title) async {
+    try {
+      await http.post(
+        Uri.parse('https://fcm.googleapis.com/v1/projects/flutter-notification-26237/messages:send'),
+        // Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ya29.a0AX9GBdXjCXK1nZhS7awILAA_U-zmRjUKflwxjernK2fN1TlkD1AKWzoZq0CJxbs9p94gjel8UbxyzR19OCfbRRM_s1CJKwfNAMemdja4LqpzzCcrDLBQQ83G_aFGZGOCm5pGPwnBAnQLs9xV8BXzaPYfvHGhJt-HaCgYKATISAQASFQHUCsbCePu0Yz_wC29xyTbNspVbAA0167',
+          // 'Authorization': 'key=AAAAw1wbu_o:APA91bG8Z6qLfNNdPt7572BrpCoAJAEr-eto7zNVP2BawEfewcvhY_ilJISAC7u6sbKhDXQt5rCLc4nwxmjEYJsEuWeAb8kujU0PyWFxDz2w9aT2TjLLVW7Cacx1wlF4Mlrb7JNyWdru',
+        },
+        body: jsonEncode(
+          {
+            "message": {
+              "token": mtoken,
+              // "topic": "news",
+              "notification": {
+                "title": title,
+                "body": body,
+              },
+              "aps": {
+                "alert" : {
+                  "body" : "great match!",
+                  "title" : "Portugal vs. Denmark",
+                },
+                "badge" : 1
+              }
+              // "data": {
+              //   "android_channel_id": "dbfood"
+              // },
+              // "android": {
+              //   "priority": "high"
+              // }
+            }
+          },
+        )
+      );
+    } catch(e) {
+      // if (kDebugMode) {
+        print('error push notification');
+      // }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,7 +219,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: ElevatedButton(
-          onPressed: showNotification,
+          onPressed: () {
+            const String titleText = 'tkb welcome you';
+            const String bodyText = 'api context';
+            sendPushMessage(titleText, bodyText);
+          },
           child: new Text(
             'click to send message',
           ),
